@@ -1,0 +1,133 @@
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+f.odbc.Connection!Conx.OpenConnection(v.Ambient.PDSN,v.Ambient.PUser,v.Ambient.PPass)
+
+
+f.Intrinsic.Control.If(v.Caller.Hook,=,11560)
+	f.Intrinsic.Variable.SetProperty("GAB-CHK-1","PL",525)
+	f.Intrinsic.Variable.SetProperty("GAB-CHK-1","PT",90)
+	
+	f.Intrinsic.Variable.SetProperty("GAB-LBL-1","PL",540)
+	f.Intrinsic.Variable.SetProperty("GAB-LBL-1","PT",90)
+
+	F.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-CHK-1,"HIDE",0)
+	F.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-LBL-1,"HIDE",0)
+	
+	F.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-CHK-1,"HIDE",0)
+	F.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-LBL-1,"HIDE",0)
+	
+	f.Intrinsic.Control.If(v.Passed.000077.Trim,=,"Blanket")
+		F.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-CHK-1,"LOCK",0)
+		F.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-LBL-1,"LOCK",0)
+	f.Intrinsic.Control.Else
+		F.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-CHK-1,"LOCK",1)
+		F.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-LBL-1,"LOCK",1)
+	f.Intrinsic.Control.EndIf
+	
+	
+	v.Passed.GAB-LBL-1.Set("Release Hold")
+	f.Intrinsic.Control.Callsub(Unload_all)
+f.Intrinsic.Control.ElseIf(v.Caller.Hook,=,11600)
+	f.Intrinsic.Control.If(v.passed.000077.Trim,=,"Blanket")
+		F.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-CHK-1,"LOCK",0)
+		F.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-LBL-1,"LOCK",0)
+		f.Intrinsic.Control.Callsub(Unload_all)
+	f.Intrinsic.Control.Else
+		F.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-CHK-1,"LOCK",1)
+		F.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-LBL-1,"LOCK",1)
+		f.Intrinsic.Control.Callsub(Unload_all)
+	f.Intrinsic.Control.EndIf
+f.Intrinsic.Control.ElseIf(v.Caller.Hook,=,11565)
+	f.Intrinsic.Control.If(v.Caller.Switches,=,"O")
+		f.Intrinsic.Control.If(v.passed.000077.Trim,=,"Blanket")
+			F.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-CHK-1,"LOCK",0)
+			F.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-LBL-1,"LOCK",0)
+			F.Intrinsic.Control.CallSub(Release_Check)
+			f.Intrinsic.Control.Callsub(Unload_all)
+		f.Intrinsic.Control.Else
+			F.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-CHK-1,"LOCK",1)
+			F.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-LBL-1,"LOCK",1)
+			f.Intrinsic.Control.Callsub(Unload_all)
+		f.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.EndIf
+f.Intrinsic.Control.ElseIf(v.Caller.Hook,=,11872)
+	f.Intrinsic.Control.CallSub(Release_save)
+	f.Intrinsic.Control.Callsub(Unload_all)
+f.Intrinsic.Control.ElseIf(v.Caller.Hook,=,48760)
+	f.Intrinsic.Control.CallSub(BO_Hold)
+	f.Intrinsic.Control.Callsub(Unload_all)
+f.Intrinsic.Control.EndIf
+
+Program.Sub.Main.End
+
+Program.Sub.Unload_all.Start
+f.ODBc.Connection!Conx.Close
+f.Intrinsic.Control.End
+Program.Sub.Unload_all.End
+
+Program.Sub.Release_Check.Start
+V.Local.SSQL.Declare(String)
+V.Local.sRelease.Declare(String)
+
+V.Local.sOrdNo.Declare(string)
+V.Local.sOrdNo.Set(v.Passed.000003)
+f.Intrinsic.String.LPad(v.Local.sOrdNo,"0",7,v.Local.sOrdNo)
+
+f.Intrinsic.String.Build("Select Release_hold from GCG_4819_BORelease where ORDER_NO = '{0}'",v.Local.sOrdNo,v.Local.SSQL)
+f.ODBC.Connection!Conx.executeandreturn(v.Local.SSQL,v.Local.sRelease)
+
+f.Intrinsic.Control.If(v.Local.sRelease,=,Y)
+	v.Passed.GAB-CHK-1.Set("Y")
+f.Intrinsic.Control.Else
+	v.Passed.GAB-CHK-1.Set("N")
+f.Intrinsic.Control.EndIf
+Program.Sub.Release_Check.End
+
+Program.Sub.Release_save.Start
+V.Local.SSQL.Declare(String)
+V.Local.sRelease.Declare(String)
+v.Local.sHoldFlag.Declare(String)
+V.Local.sOrdNo.Declare(string)
+V.Local.sOrdNo.Set(v.Passed.000003)
+f.Intrinsic.String.LPad(v.Local.sOrdNo,"0",7,v.Local.sOrdNo)
+V.Local.sRelease.set(v.Passed.GAB-CHK-1)
+f.Intrinsic.String.Build("Select Release_hold from GCG_4819_BORelease where ORDER_NO = '{0}'",v.Local.sOrdNo,v.Local.SSQL)
+f.ODBC.Connection!Conx.executeandreturn(v.Local.SSQL,v.Local.sHoldFlag)
+f.Intrinsic.Control.If(v.Local.sHoldFlag.trim,=,"","AND",V.Local.sRelease.trim,=,"Y")
+	f.Intrinsic.String.Build("Insert into GCG_4819_BORelease values ('{0}','{1}')",v.Local.sOrdNo,v.Local.sRelease,v.Local.SSQL)
+	f.ODBC.Connection!Conx.execute(v.Local.SSQL)
+f.Intrinsic.Control.ElseIf(V.Local.sRelease,<>,"Y")
+	f.Intrinsic.String.Build("Delete from GCG_4819_BORelease where Order_no = '{0}'",v.Local.sOrdNo,v.Local.sRelease,v.Local.SSQL)
+	f.ODBC.Connection!Conx.execute(v.Local.SSQL)
+f.Intrinsic.Control.EndIf
+f.intrinsic.Control.If(v.Caller.Switches,=,"O")
+	F.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-CHK-1,"LOCK",1)
+	F.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-LBL-1,"LOCK",1)
+	v.Passed.GAB-CHK-1.Set("N")
+f.Intrinsic.Control.EndIf
+
+
+Program.Sub.Release_save.End
+
+Program.Sub.BO_Hold.Start
+V.Local.SSQL.Declare(String)
+V.Local.sMsg.Declare(String)
+v.Local.sHoldFlag.Declare(String)
+V.Local.sOrdNo.Declare(string)
+V.Local.sOrdNo.Set(v.Passed.000104)
+f.Intrinsic.String.LPad(v.Local.sOrdNo,"0",7,v.Local.sOrdNo)
+
+f.Intrinsic.String.Build("Select Release_hold from GCG_4819_BORelease where ORDER_NO = '{0}'",v.Local.sOrdNo,v.Local.SSQL)
+f.ODBC.Connection!Conx.executeandreturn(v.Local.SSQL,v.Local.sHoldFlag)
+f.Intrinsic.Control.If(v.Local.sHoldFlag,=,"Y")
+	v.Passed.777777.Set(1)
+	f.Intrinsic.string.Build("Order No {0} has a release hold on it. This release cannot be processed!",v.Local.sOrdNo,v.Local.sMsg)
+	f.Intrinsic.Ui.Msgbox(v.Local.sMsg,"Release hold on blanket order")
+	f.Intrinsic.Control.CallSub(Unload_all)
+f.Intrinsic.Control.Else
+	f.Intrinsic.Control.CallSub(Unload_all)
+f.Intrinsic.Control.EndIf
+
+Program.Sub.BO_Hold.End
